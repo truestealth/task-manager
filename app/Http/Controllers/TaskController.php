@@ -1,91 +1,101 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Http\Requests\StoreTaskRequest;
+use App\Http\Requests\UpdateTaskRequest;
 use App\Models\Task;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 
-class TaskController extends Controller
+final class TaskController extends Controller
 {
     /**
      * Получение списка задач с возможностью фильтрации
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
+     *
+     * @return Collection<int, Task>
      */
-    public function index(Request $request)
+    public function index(Request $request): Collection
     {
-        $query = Task::query();
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
+        $query = Task::query()->where('user_id', $user->id);
 
         // Фильтрация по статусу
-        if ($request->has('status')) {
+        if ($request->has('status') && is_string($request->status)) {
             $query->where('status', $request->status);
         }
 
-        // Фильтрация по сроку выполнения
-        if ($request->has('due_date')) {
-            $query->where('due_date', '<=', $request->due_date);
+        // Фильтрация по точной дате выполнения
+        if ($request->has('due_date') && is_string($request->due_date)) {
+            // Сравнение только по дате, без времени
+            $query->whereDate('due_date', $request->due_date);
+        }
+
+        // Фильтрация по дате ПОСЛЕ указанной
+        if ($request->has('due_date_after') && is_string($request->due_date_after)) {
+            $query->whereDate('due_date', '>', $request->due_date_after);
+        }
+
+        // Фильтрация по дате ДО указанной
+        if ($request->has('due_date_before') && is_string($request->due_date_before)) {
+            $query->whereDate('due_date', '<', $request->due_date_before);
         }
 
         // Кэширование результатов на 10 минут
-        $cacheKey = 'tasks.' . md5($request->fullUrl());
-        
-        return Cache::remember($cacheKey, 600, function () use ($query) {
-            return $query->with('user')->get();
-        });
+        $cacheKey = 'tasks.'.$user->id.'.'.md5($request->fullUrl());
+
+        /** @var Collection<int, Task> */
+        $tasks = Cache::remember($cacheKey, 600, fn () =>
+            /** @var Collection<int, Task> */
+            $query->with('user')->get());
+
+        return $tasks;
     }
 
     /**
      * Создание новой задачи
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
      */
-    public function store(Request $request)
+    public function store(StoreTaskRequest $request): JsonResponse
     {
-        // Валидация входных данных
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'required|string',
-            'due_date' => 'required|date',
-            'status' => 'required|in:pending,in_progress,completed',
-            'user_id' => 'required|exists:users,id'
-        ]);
+        $validatedData = $request->validated();
 
-        $task = Task::create($validated);
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
+        // Автоматически добавляем user_id текущего пользователя
+        $validatedData = array_merge($validatedData, ['user_id' => $user->id]);
+
+        $task = Task::create($validatedData);
         // Очистка кэша после создания новой задачи
         Cache::tags('tasks')->flush();
 
-        return response()->json($task, 201);
+        return response()->json($task->load('user'), 201);
     }
 
     /**
      * Получение информации о конкретной задаче
-     * @param Task $task
-     * @return Task
      */
-    public function show(Task $task)
+    public function show(Task $task): Task
     {
+        $this->authorize('view', $task);
+
         return $task->load('user');
     }
 
     /**
      * Обновление задачи
-     * @param Request $request
-     * @param Task $task
-     * @return Task
      */
-    public function update(Request $request, Task $task)
+    public function update(UpdateTaskRequest $request, Task $task): Task
     {
-        // Валидация входных данных (все поля опциональны)
-        $validated = $request->validate([
-            'title' => 'sometimes|string|max:255',
-            'description' => 'sometimes|string',
-            'due_date' => 'sometimes|date',
-            'status' => 'sometimes|in:pending,in_progress,completed',
-            'user_id' => 'sometimes|exists:users,id'
-        ]);
+        $this->authorize('update', $task);
 
-        $task->update($validated);
+        $validatedData = $request->validated();
+
+        $task->update($validatedData);
         // Очистка кэша после обновления задачи
         Cache::tags('tasks')->flush();
 
@@ -94,11 +104,11 @@ class TaskController extends Controller
 
     /**
      * Удаление задачи
-     * @param Task $task
-     * @return \Illuminate\Http\JsonResponse
      */
-    public function destroy(Task $task)
+    public function destroy(Task $task): JsonResponse
     {
+        $this->authorize('delete', $task);
+
         $task->delete();
         // Очистка кэша после удаления задачи
         Cache::tags('tasks')->flush();

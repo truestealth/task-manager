@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -11,7 +13,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('tasks', function (Blueprint $table) {
+        Schema::create('tasks', function (Blueprint $table): void {
             // Основные поля
             $table->id();
             $table->string('title'); // Название задачи
@@ -20,7 +22,7 @@ return new class extends Migration
             $table->enum('status', ['pending', 'in_progress', 'completed'])->default('pending'); // Статус задачи
             $table->foreignId('user_id')->constrained()->onDelete('cascade'); // Связь с пользователем
             $table->timestamps();
-            
+
             // Составной индекс для оптимизации запросов по статусу и сроку выполнения
             $table->index(['status', 'due_date']);
         });

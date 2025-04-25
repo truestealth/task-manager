@@ -1,61 +1,155 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Laravel Task Management API
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Это простое API-приложение для управления задачами, созданное с использованием Laravel 12. Оно предоставляет базовые функции CRUD для задач, аутентификацию пользователей с помощью Sanctum и фильтрацию задач.
 
-## About Laravel
+## Основные функции
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+*   Регистрация и аутентификация пользователей (Laravel Sanctum).
+*   Создание, чтение, обновление и удаление задач (CRUD).
+*   Фильтрация задач по статусу и дате выполнения.
+*   Авторизация на основе политик (Policy) для управления задачами.
+*   Кэширование списка задач.
+*   Настроен статический анализ (PHPStan), форматирование кода (Pint) и рефакторинг (Rector).
+*   Используется PestPHP для тестирования.
+*   Локальное окружение развертывается с помощью Laravel Sail (Docker).
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Требования
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+*   PHP >= 8.4
+*   Composer
+*   Docker (для использования Laravel Sail)
+*   Node.js и npm (для frontend-зависимостей, если потребуются)
 
-## Learning Laravel
+## Установка
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+1.  **Клонировать репозиторий:**
+    ```bash
+    git clone https://github.com/truestealth/task-manager.git
+    cd task-manager
+    ```
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+2.  **Скопировать файл окружения:**
+    ```bash
+    cp .env.example .env
+    ```
+    *Не забудьте настроить параметры базы данных (`DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`) в `.env` файле.*
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+3.  **Установить зависимости Composer:**
+    *   Если Sail еще не запущен:
+        ```bash
+        docker run --rm \
+            -u "$(id -u):$(id -g)" \
+            -v "$(pwd):/var/www/html" \
+            -w /var/www/html \
+            laravelsail/php84-composer:latest \
+            composer install --ignore-platform-reqs
+        ```
+    *   Или после запуска Sail (см. шаг 5):
+        ```bash
+        ./vendor/bin/sail composer install
+        ```
 
-## Laravel Sponsors
+4.  **Сгенерировать ключ приложения:**
+    ```bash
+    ./vendor/bin/sail artisan key:generate
+    ```
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+5.  **Запустить контейнеры Sail:**
+    ```bash
+    ./vendor/bin/sail up -d
+    ```
+    *(Ключ `-d` запускает контейнеры в фоновом режиме)*
 
-### Premium Partners
+6.  **Выполнить миграции базы данных:**
+    ```bash
+    ./vendor/bin/sail artisan migrate
+    ```
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development/)**
-- **[Active Logic](https://activelogic.com)**
+7.  **(Опционально) Заполнить базу данных тестовыми данными:**
+    ```bash
+    ./vendor/bin/sail artisan db:seed
+    ```
 
-## Contributing
+## Использование (API Эндпоинты)
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Все эндпоинты имеют префикс `/api`. Для доступа к защищенным маршрутам требуется `Bearer` токен аутентификации в заголовке `Authorization`.
 
-## Code of Conduct
+*   **Аутентификация**
+    *   `POST /register` - Регистрация нового пользователя.
+        *   Тело запроса: `{ "name": "John Doe", "email": "john@example.com", "password": "password", "password_confirmation": "password" }`
+        *   Ответ: `{ "user": { ... }, "token": "..." }` (201 Created)
+    *   `POST /login` - Вход пользователя.
+        *   Тело запроса: `{ "email": "john@example.com", "password": "password" }`
+        *   Ответ: `{ "user": { ... }, "token": "..." }` (200 OK)
+    *   `POST /logout` (Требуется аутентификация) - Выход пользователя (удаление токенов).
+        *   Ответ: `{ "message": "Успешный выход из системы" }` (200 OK)
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+*   **Задачи** (Требуется аутентификация)
+    *   `GET /tasks` - Получение списка задач текущего пользователя.
+        *   Параметры запроса (опционально):
+            *   `status` (string): Фильтр по статусу (`pending`, `in_progress`, `completed`).
+            *   `due_date` (string, YYYY-MM-DD): Фильтр по точной дате выполнения.
+            *   `due_date_after` (string, YYYY-MM-DD): Фильтр по дате ПОСЛЕ указанной.
+            *   `due_date_before` (string, YYYY-MM-DD): Фильтр по дате ДО указанной.
+        *   Ответ: `[ { ...task... }, ... ]` (200 OK)
+    *   `POST /tasks` - Создание новой задачи.
+        *   Тело запроса: `{ "title": "Новая задача", "description": "Описание", "due_date": "YYYY-MM-DD", "status": "pending" }`
+        *   Ответ: `{ ...task... }` (201 Created)
+    *   `GET /tasks/{id}` - Получение информации о конкретной задаче.
+        *   Ответ: `{ ...task... }` (200 OK)
+    *   `PUT /tasks/{id}` - Обновление задачи.
+        *   Тело запроса (можно передавать только изменяемые поля): `{ "title": "Обновленное название", "status": "completed" }`
+        *   Ответ: `{ ...task... }` (200 OK)
+    *   `DELETE /tasks/{id}` - Удаление задачи.
+        *   Ответ: (пусто) (204 No Content)
 
-## Security Vulnerabilities
+## Структура тестов
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Тесты расположены в директории `tests` и имеют суффикс `_Pest.php` для обозначения, что они написаны с использованием Pest PHP.
 
-## License
+*   **Feature тесты**: Тестируют API эндпоинты и функциональность приложения.
+    *   `tests/Feature/AuthTest_Pest.php` - Тесты аутентификации
+    *   `tests/Feature/TaskApiTest_Pest.php` - Тесты API задач
+    *   `tests/Feature/TaskCacheTest_Pest.php` - Тесты кэширования задач
+    *   `tests/Feature/TaskFilteringTest_Pest.php` - Тесты фильтрации задач
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+*   **Unit тесты**: Тестируют отдельные компоненты приложения.
+    *   `tests/Unit/TaskModelTest_Pest.php` - Тесты модели Task
+    *   `tests/Unit/TaskPolicyTest_Pest.php` - Тесты политик доступа
+    *   `tests/Unit/TaskValidationTest_Pest.php` - Тесты валидации задач
+
+## Тестирование
+
+Для запуска тестов используйте Sail:
+
+*   **Запуск всех тестов (Pest):**
+    ```bash
+    ./vendor/bin/sail test
+    ```
+    Или:
+    ```bash
+    ./vendor/bin/sail pest
+    ```
+
+*   **Запуск полного набора проверок (Pest, Pint, PHPStan, Rector):**
+    *   Найдите команду в `composer.json` в секции `scripts.test`. По умолчанию это может быть:
+    ```bash
+    ./vendor/bin/sail composer test
+    ```
+
+## Статический анализ и форматирование
+
+*   **Запуск PHPStan:**
+    ```bash
+    ./vendor/bin/sail phpstan analyse
+    ```
+
+*   **Проверка форматирования Pint:**
+    ```bash
+    ./vendor/bin/sail pint --test
+    ```
+
+*   **Исправление форматирования Pint:**
+    ```bash
+    ./vendor/bin/sail pint
+    ```
