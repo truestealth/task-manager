@@ -26,21 +26,21 @@ final class TaskFactory extends Factory
     public function definition(): array
     {
         return [
-            'title' => $this->faker->sentence(3),
-            'description' => $this->faker->paragraph(),
-            'due_date' => $this->faker->dateTimeBetween('now', '+2 weeks')->format('Y-m-d H:i:s'),
-            'status' => $this->faker->randomElement(['pending', 'in_progress', 'completed']),
+            'title' => fake()->sentence(3),
+            'description' => fake()->paragraph(),
+            'due_date' => fake()->dateTimeBetween('now', '+2 weeks')->format('Y-m-d H:i:s'),
+            'status' => fake()->randomElement(['new', 'in_progress', 'completed']),
             'user_id' => User::factory(),
         ];
     }
 
     /**
-     * Задача со статусом "pending".
+     * Задача со статусом "new".
      */
     public function pending(): self
     {
         return $this->state(fn (array $attributes): array => [
-            'status' => 'pending',
+            'status' => 'new',
         ]);
     }
 
@@ -70,8 +70,8 @@ final class TaskFactory extends Factory
     public function overdue(): self
     {
         return $this->state(fn (array $attributes): array => [
-            'due_date' => $this->faker->dateTimeBetween('-1 month', 'yesterday')->format('Y-m-d H:i:s'),
-            'status' => $this->faker->randomElement(['pending', 'in_progress']),
+            'due_date' => fake()->dateTimeBetween('-1 month', 'yesterday')->format('Y-m-d H:i:s'),
+            'status' => fake()->randomElement(['new', 'in_progress']),
         ]);
     }
 

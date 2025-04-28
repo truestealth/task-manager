@@ -19,12 +19,14 @@ return new class extends Migration
             $table->string('title'); // Название задачи
             $table->text('description'); // Подробное описание задачи
             $table->dateTime('due_date'); // Срок выполнения задачи
-            $table->enum('status', ['pending', 'in_progress', 'completed'])->default('pending'); // Статус задачи
+            $table->enum('status', ['new', 'in_progress', 'completed'])->default('new'); // Статус задачи
             $table->foreignId('user_id')->constrained()->onDelete('cascade'); // Связь с пользователем
             $table->timestamps();
 
-            // Составной индекс для оптимизации запросов по статусу и сроку выполнения
-            $table->index(['status', 'due_date']);
+            $table->index('user_id');
+            $table->index('status');
+            $table->index('due_date');
+
         });
     }
 

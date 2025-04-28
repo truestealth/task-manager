@@ -8,6 +8,17 @@ use App\Models\Task;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
+/**
+ * @OA\Schema(
+ *     schema="UpdateTaskRequest",
+ *     type="object",
+ *
+ *     @OA\Property(property="title", type="string", maxLength=255, example="Updated task title"),
+ *     @OA\Property(property="description", type="string", example="Updated description"),
+ *     @OA\Property(property="due_date", type="string", format="date", example="2024-05-01"),
+ *     @OA\Property(property="status", type="string", enum={"new", "in_progress", "completed"}, example="completed")
+ * )
+ */
 final class UpdateTaskRequest extends FormRequest
 {
     /**
@@ -25,8 +36,9 @@ final class UpdateTaskRequest extends FormRequest
 
     /**
      * Получает правила валидации, которые применяются к запросу.
-     *
-     * @return array<string, string|array<int, mixed>|Rule>
+     */
+    /**
+     * @return array<string, mixed>
      */
     public function rules(): array
     {

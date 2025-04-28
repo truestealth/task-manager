@@ -9,24 +9,23 @@ use Illuminate\Foundation\Http\FormRequest;
 final class LoginUserRequest extends FormRequest
 {
     /**
-     * Определяет, авторизован ли пользователь для выполнения этого запроса.
+     * Determine if the user is authorized to make this request.
      */
     public function authorize(): bool
     {
-        // Вход доступен всем
         return true;
     }
 
     /**
-     * Получает правила валидации, которые применяются к запросу.
+     * Get the validation rules that apply to the request.
      *
-     * @return array<string, string>
+     * @return array<string, mixed>
      */
     public function rules(): array
     {
         return [
-            'email' => 'required|email',
-            'password' => 'required',
+            'email' => 'required|string|email',
+            'password' => 'required|string',
         ];
     }
 }
